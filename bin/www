@@ -1,0 +1,48 @@
+#! /usr/bin/env node
+const program = require('commander');
+const chalk = require('chalk');
+const config = require('./config');
+const Server = require('../src/server')
+program.name('my-hs'); // 配置使用的名字
+// 写服务：
+// 1.端口号 2.能指定目录 3.文件是否需要缓存 4......
+
+const defaultConfig = {};
+const usageList = [];
+// [[key,value],[key,value]]
+Object.entries(config).forEach(([key, value]) => { // 解构赋值 es5 中的api
+    defaultConfig[key] = value.default;
+    usageList.push(value.usage)
+    program.option(value.option, value.descriptor);
+});
+program.on('--help',function () {
+    console.log('Examples:');
+    usageList.forEach(line=>{
+        console.log(`  ${chalk.green(line)} \r`);
+    })
+})
+program.parse(process.argv); // 解析用户执行时的参数
+
+// 根据用户的参数 和 默认值 做出一个配置来
+function mergeOtions(defaultConfig,newConfig){
+    const options = {}
+    for(let key in defaultConfig){
+        if(!(key in newConfig)){
+            options[key] = defaultConfig[key]
+        }else{
+            // 校验newConfig 是否符合我的预期
+            options[key] = newConfig[key]
+        }
+    }
+    return options
+}
+let options = mergeOtions(defaultConfig,program);
+
+// 获取用户的参数来创建一个服务并且启动
+let server = new Server(options);
+server.start();
+
+// node 写的工具可以用node模块
+// 前端代码不能使用核心模块
+
+
